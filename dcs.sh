@@ -1,20 +1,44 @@
 #!/bin/bash
 set -e
 
-# === CONFIG ===
-SAVED_GAMES="$HOME/.local/share/Steam/steamapps/compatdata/3809653855/pfx/drive_c/users/steamuser/Saved Games/DCS"
-DCS_INSTALL="$HOME/.local/share/Steam/steamapps/compatdata/2954704094/pfx/drive_c/Program Files/Eagle Dynamics/DCS World"
+COMPATDATA="$HOME/.local/share/Steam/steamapps/compatdata"
+
+echo "==> Detecting DCS prefixes..."
+INSTALL_PREFIX=$(find "$COMPATDATA" -path "*/drive_c/Program Files/Eagle Dynamics/DCS World/bin-mt/DCS.exe" 2>/dev/null | head -1 | sed 's|/pfx/drive_c/.*||')
+SAVED_PREFIX=$(find "$COMPATDATA" -path "*/drive_c/users/steamuser/Saved Games/DCS/Logs/dcs.log" 2>/dev/null | head -1 | sed 's|/pfx/drive_c/.*||')
+
+if [ -z "$INSTALL_PREFIX" ]; then
+    echo "ERROR: Could not find DCS install prefix. Is DCS installed?"
+    exit 1
+fi
+
+if [ -z "$SAVED_PREFIX" ]; then
+    echo "ERROR: Could not find DCS saved games prefix. Launch DCS at least once first."
+    exit 1
+fi
+
+SAVED_APP_ID=$(basename "$SAVED_PREFIX")
+
+echo "    Install prefix: $INSTALL_PREFIX"
+echo "    Saved prefix:   $SAVED_PREFIX (app ID: $SAVED_APP_ID)"
+
+DCS_INSTALL="$INSTALL_PREFIX/pfx/drive_c/Program Files/Eagle Dynamics/DCS World"
+SAVED_GAMES="$SAVED_PREFIX/pfx/drive_c/users/steamuser/Saved Games/DCS"
+
 RESOLUTION_WIDTH=2560
 RESOLUTION_HEIGHT=1440
 
-echo "==> Installing pip3..."
-sudo dnf install -y python3-pip
+echo "==> Installing pip3 and protontricks..."
+sudo dnf install -y python3-pip protontricks
 
 echo "==> Installing protonup..."
 pip install protonup
 
 echo "==> Installing GE-Proton..."
 protonup
+
+echo "==> Installing d3dcompiler_47 into DCS prefix..."
+protontricks "$SAVED_APP_ID" d3dcompiler_47
 
 echo "==> Creating options.lua..."
 mkdir -p "$SAVED_GAMES/Config"
@@ -30,7 +54,7 @@ options =
         ["fullscreen"] = false,
         ["width"] = $RESOLUTION_WIDTH,
         ["height"] = $RESOLUTION_HEIGHT,
-        ["aspectRatio"] = $(echo "scale=13; $RESOLUTION_WIDTH/$RESOLUTION_HEIGHT" | bc),
+        ["aspectRatio"] = 1.7777777777778,
     },
     ["misc"] = 
     {
