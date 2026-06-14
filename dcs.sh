@@ -40,6 +40,15 @@ protonup
 echo "==> Installing d3dcompiler_47 into DCS prefix..."
 protontricks "$SAVED_APP_ID" d3dcompiler_47
 
+echo "==> Installing vcrun2022 (required for DCS 2.9.27+ msvcp140_atomic_wait)..."
+protontricks "$SAVED_APP_ID" vcrun2022
+
+echo "==> Overriding msvcp140/vcruntime140 DLLs to native,builtin..."
+protontricks -c "wine reg add 'HKEY_CURRENT_USER\\Software\\Wine\\DllOverrides' /v msvcp140 /d native,builtin /f" "$SAVED_APP_ID"
+protontricks -c "wine reg add 'HKEY_CURRENT_USER\\Software\\Wine\\DllOverrides' /v msvcp140_atomic_wait /d native,builtin /f" "$SAVED_APP_ID"
+protontricks -c "wine reg add 'HKEY_CURRENT_USER\\Software\\Wine\\DllOverrides' /v vcruntime140 /d native,builtin /f" "$SAVED_APP_ID"
+protontricks -c "wine reg add 'HKEY_CURRENT_USER\\Software\\Wine\\DllOverrides' /v vcruntime140_1 /d native,builtin /f" "$SAVED_APP_ID"
+
 echo "==> Creating options.lua..."
 mkdir -p "$SAVED_GAMES/Config"
 cat > "$SAVED_GAMES/Config/options.lua" << EOF
